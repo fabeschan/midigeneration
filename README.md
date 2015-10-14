@@ -42,7 +42,7 @@ Description of each file:
 analyze.py
 > This file sets up infrastructure for the similarity measure using a classifier that compares two music segments and gives a score between 0 and 1
 
-> Defines a training model, trains it, and saves it in a pickled file
+> Defines a training model, trains it, and saves it in a pickled file in `cached/`
 
 chords.py
 > Implements some tools to help identifying chords
