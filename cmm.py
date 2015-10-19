@@ -1,6 +1,6 @@
 # Markov Model thingy
-import random, sys, time
-import data, analyze, midi, experiments, patterns, chords
+import random, sys
+import data, midi, experiments, patterns, chords
 from decimal import Decimal as fixed
 from IPython import embed
 
@@ -11,7 +11,7 @@ class Markov(object):
 
     trains state and state transitions by reading statechains
     statechain: a list of states
-    state: a concrete class derived from State (described below)
+    state: a concrete class derived from the abstract class State
 
     '''
     START_TOKEN = 'start_token'
@@ -44,7 +44,9 @@ class Markov(object):
         '''
         generate a statechain
         seed is optional; if provided, will build statechain from seed
-        (note: seed is untested)
+
+        note: seed is untested and may very well not work...
+        however, seed is core functionality that will help combine all_keys and segmentation (in the future)
 
         '''
         buf = [Markov.START_TOKEN] * self.chain_length
@@ -84,6 +86,7 @@ class Markov(object):
             mm.add(chain)
         return mm
 
+
 class State(object):
 
     '''
@@ -109,6 +112,7 @@ class State(object):
     def copy(self):
         raise NotImplementedError("Subclass must implement abstract method")
 
+
 class SegmentState(State):
 
     def __init__(self, label, mm):
@@ -131,6 +135,7 @@ class SegmentState(State):
             note_states.extend(gen)
         return note_states
 
+
 class NoteState(State):
 
     def __init__(self, notes, bar, chord='', origin=''):
@@ -147,7 +152,7 @@ class NoteState(State):
             n.dur = fixed(n.dur) / bar
 
     def state_data(self):
-        # all of this will be hashed
+        # make hashable version of state information intended to be hashed
         notes_info = [ (n.pitch, n.dur) for n in self.notes ]
         relevant = [self.bar_pos, self.state_duration, self.chord, tuple(notes_info)]
         return tuple(relevant)
@@ -171,6 +176,8 @@ class NoteState(State):
 
     @staticmethod
     def state_chain_to_notes(state_chain, bar):
+        # arg bar: number of ticks to define a bar for midi files
+
         last_pos = 0
         notes = []
         for s in state_chain: # update note positions for each s in state_chain
@@ -184,6 +191,9 @@ class NoteState(State):
 
     @staticmethod
     def notes_to_state_chain(notes, bar):
+        # arg bar: number of ticks to define a bar for midi files
+
+        # group notes into bins by their starting positions
         bin_by_pos = {}
         for n in notes:
             v = bin_by_pos.get(n.pos, [])
@@ -191,19 +201,25 @@ class NoteState(State):
             bin_by_pos[n.pos] = v
 
         positions = sorted(bin_by_pos.keys())
+
+        # produce a state_chain by converting the notes at every position x into a NoteState
         state_chain = map(lambda x: NoteState(bin_by_pos[x], bar), positions)
 
         if not len(state_chain):
             return state_chain
 
+        # calculate state_duration for each state
         for i in range(len(state_chain) - 1):
             state_chain[i].state_duration = state_chain[i+1].state_position - state_chain[i].state_position
-        state_chain[-1].state_duration = max(n.dur for n in state_chain[-1].notes)
+        state_chain[-1].state_duration = max(n.dur for n in state_chain[-1].notes) # the last state needs special care
 
         return state_chain
 
     @staticmethod
     def piece_to_state_chain(piece, use_chords=True):
+        # arg use_chord: if True, markov state holds chord label as state information
+
+        # group notes into bins by their starting positions
         bin_by_pos = {}
         for n in piece.unified_track.notes:
             v = bin_by_pos.get(n.pos, [])
@@ -213,7 +229,7 @@ class NoteState(State):
         positions = sorted(bin_by_pos.keys())
         if use_chords:
             cc = chords.fetch_classifier()
-            allbars = cc.predict(piece)
+            allbars = cc.predict(piece) # assign chord label for each bar
             state_chain = map(lambda x: NoteState(bin_by_pos[x], piece.bar, chord=allbars[x/piece.bar], origin=piece.filename), positions)
         else:
             state_chain = map(lambda x: NoteState(bin_by_pos[x], piece.bar, chord='', origin=piece.filename), positions)
@@ -221,9 +237,10 @@ class NoteState(State):
         if not len(state_chain):
             return state_chain
 
+        # calculate state_duration for each state
         for i in range(len(state_chain) - 1):
             state_chain[i].state_duration = state_chain[i+1].state_position - state_chain[i].state_position
-        state_chain[-1].state_duration = max(n.dur for n in state_chain[-1].notes)
+        state_chain[-1].state_duration = max(n.dur for n in state_chain[-1].notes) # the last state needs special care
 
         return state_chain
 
@@ -237,7 +254,7 @@ def piece_to_markov_model(musicpiece, c, segmentation=False, all_keys=False):
     if not segmentation:
         state_chain = NoteState.piece_to_state_chain(musicpiece, all_keys)
         mm.add(state_chain)
-        if all_keys:
+        if all_keys: # shift piece up some number of tones, and down some number of tones
             for i in range(1, 6):
                 shifted_state_chain = [ s.transpose(i) for s in state_chain ]
                 mm.add(shifted_state_chain)
@@ -247,8 +264,11 @@ def piece_to_markov_model(musicpiece, c, segmentation=False, all_keys=False):
     else:
         segmented = experiments.analysis(musicpiece, c)
         chosenscore, chosen, labelled_sections = segmented.chosenscore, segmented.chosen, segmented.labelled_sections
+
+        # state_chain implementation #1: simplistic, but not correct
         #state_chain = [ SegmentState(labelled_sections[ch], piece_to_markov_model(musicpiece.segment_by_bars(ch[0], ch[0]+ch[1]), c)) for ch in chosen ]
 
+        # state_chain implementation #2: more correct than #1, at least
         state_chain = []
         labelled_states = {}
         for ch in chosen:
@@ -272,6 +292,11 @@ def piece_to_markov_model(musicpiece, c, segmentation=False, all_keys=False):
     return mm
 
 def test_variability(mm, meta, bar):
+    '''
+    Generate song 10 times from a trained markov model  and print out their lengths
+    if they are all the same lengths, chances are the pieces are all the same
+
+    '''
     lens = []
     for i in range(10):
         song, gen, a = generate_song(mm, meta, bar, True)
@@ -302,7 +327,7 @@ if __name__ == '__main__':
     segmentation = True
     all_keys = False
 
-    if len(sys.argv) == 4:
+    if len(sys.argv) == 4: # <midi-file> <start-bar> <end-bar>
         musicpiece = data.piece(sys.argv[1])
         musicpiece = musicpiece.segment_by_bars(int(sys.argv[2]), int(sys.argv[3]))
         mm = piece_to_markov_model(musicpiece, c, segmentation)
@@ -311,6 +336,8 @@ if __name__ == '__main__':
     else:
         pieces = ["mid/hilarity.mid", "mid/froglegs.mid", "mid/easywinners.mid"]
         mm = Markov()
+
+        # generate a model _mm for each piece then add them together
         for p in pieces:
             musicpiece = data.piece(p)
             _mm = piece_to_markov_model(musicpiece, c, segmentation, all_keys)
@@ -318,4 +345,6 @@ if __name__ == '__main__':
         song, gen, a = generate_song(mm, musicpiece.meta, musicpiece.bar, segmentation)
 
     midi.write('output.mid', song)
-    embed()
+
+    # uncomment this to enter shell before program exits... allows inspection of variables
+    #embed()

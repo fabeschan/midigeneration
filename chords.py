@@ -123,7 +123,7 @@ class chord_generator(object):
                 for tonic in range(12):
                     nf = note_frequency()
                     for i in range(self.div + random.choice(range(self.div))):
-                        pitch = random.choice(ctemplate.template * 1 + ctemplate.auxiliary * 0)
+                        pitch = random.choice(ctemplate.template * 1 + ctemplate.auxiliary * 0) # auxiliary * 0 means no noise
                         dur = self.bar / self.div
                         n = data.note(['note', 0, dur, 0, tonic + pitch])
                         nf.add(n)

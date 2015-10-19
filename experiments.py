@@ -2,6 +2,7 @@
     experiments.py
 
     patterns.py is too big of a file, so here is a wrapper to help with segmentation
+    but I suppose this file needs a better name...
 '''
 
 
