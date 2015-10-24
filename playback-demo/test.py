@@ -2,19 +2,20 @@
 #
 # see way below for source notes
 
-from music21 import *
+#from music21 import *
+import music21
 
 # we create the music21 Bottom Part, and do this explicitly, one object at a time.
 
-n1 = note.Note('e4')
+n1 = music21.note.Note('e4')
 n1.duration.type = 'whole'
-n2 = note.Note('d4')
+n2 = music21.note.Note('d4')
 n2.duration.type = 'whole'
-m1 = stream.Measure()
-m2 = stream.Measure()
+m1 = music21.stream.Measure()
+m2 = music21.stream.Measure()
 m1.append(n1)
 m2.append(n2)
-partLower = stream.Part()
+partLower = music21.stream.Part()
 partLower.append(m1)
 partLower.append(m2)
 
@@ -23,13 +24,13 @@ partLower.append(m2)
 data1 = [('g4', 'quarter'), ('a4', 'quarter'), ('b4', 'quarter'), ('c#5', 'quarter')]
 data2 = [('d5', 'whole')]
 data = [data1, data2]
-partUpper = stream.Part()
+partUpper = music21.stream.Part()
 
 def makeUpperPart(data):
     for mData in data:
-        m = stream.Measure()
+        m = music21.stream.Measure()
         for pitchName, durType in mData:
-            n = note.Note(pitchName)
+            n = music21.note.Note(pitchName)
             n.duration.type = durType
             m.append(n)
         partUpper.append(m)
@@ -37,7 +38,7 @@ makeUpperPart(data)
 
 # Now, we can add both Part objects into a music21 Score object.
 
-sCadence = stream.Score()
+sCadence = music21.stream.Score()
 sCadence.insert(0, partUpper)
 sCadence.insert(0, partLower)
 
@@ -49,7 +50,7 @@ import cStringIO
 if hasattr(sCadence, 'midiFile'):
    sCadence_mf = sCadence.midiFile
 else: # for >= v.1.3:
-   sCadence_mf = midi.translate.streamToMidiFile(sCadence)
+   sCadence_mf = music21.midi.translate.streamToMidiFile(sCadence)
 sCadence_mStr = sCadence_mf.writestr()
 sCadence_mStrFile = cStringIO.StringIO(sCadence_mStr)
 
@@ -82,7 +83,7 @@ def play_music(music_file):
         clock.tick(30)
 
 # play the midi file we just saved
-play_music(sCadence_mStrFile)
+#play_music(sCadence_mStrFile)
 
 #============================
 
@@ -90,9 +91,9 @@ play_music(sCadence_mStrFile)
 data1.reverse()
 data2 = [('d5', 'whole')]
 data = [data1, data2]
-partUpper = stream.Part()
+partUpper = music21.stream.Part()
 makeUpperPart(data)
-sCadence2 = stream.Score()
+sCadence2 = music21.stream.Score()
 sCadence2.insert(0, partUpper)
 sCadence2.insert(0, partLower)
 
@@ -101,7 +102,10 @@ sCadence2.insert(0, partLower)
 if hasattr(sCadence2,  'midiFile'):
    sCadence2_mf = sCadence.midiFile
 else: # for >= v.1.3:
-   sCadence2_mf = midi.translate.streamToMidiFile(sCadence2)
+   sCadence2_mf = music21.midi.translate.streamToMidiFile(sCadence2)
 sCadence2_mStr = sCadence2_mf.writestr()
 sCadence2_mStrFile = cStringIO.StringIO(sCadence2_mStr)
-play_music(sCadence2_mStrFile)
+#play_music(sCadence2_mStrFile)
+
+sp = music21.midi.realtime.StreamPlayer(sCadence)
+sp.play()
