@@ -87,6 +87,7 @@ playback-demo.py
 > Loops over MIDI events and sends them to a MIDI channel
 
 > It polls a local file called triggerfile to toggle between two .mid files:
+> To trigger a toggle, just put something in the file as follows:
 ```
 echo "blah" > triggerfile
 ```
