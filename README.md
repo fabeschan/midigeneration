@@ -87,7 +87,6 @@ playback-demo.py
 > Loops over MIDI events and sends them to a MIDI channel
 
 > It polls a local file called triggerfile to toggle between two .mid files:
-
 ```
 echo "blah" > triggerfile
 ```
@@ -99,4 +98,4 @@ echo "blah" > triggerfile
 pip install simplecoremidi
 ```
 
-> And a DAW (I use REAPER which is 'free')
+> To receive those MIDI events and be able to play them, use a DAW (I use REAPER which is 'free') and have it receive from the "simple core midi source" input and play to a virtual instrument
