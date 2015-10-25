@@ -80,3 +80,23 @@ similar_sections.py
 > defines training data that help train a measure of similarity between two segments
 
 > used by analyze.py
+
+playback-demo.py
+> PROOF OF CONCEPT - real time dynamic playback
+
+> Loops over MIDI events and sends them to a MIDI channel
+
+> It polls a local file called triggerfile to toggle between two .mid files:
+
+```
+echo "blah" > triggerfile
+```
+
+> (only tested on OSX)
+
+> Requires simplecoremidi package for python
+```
+pip install simplecoremidi
+```
+
+> And a DAW (I use REAPER which is 'free')
