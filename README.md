@@ -94,7 +94,7 @@ echo "blah" > triggerfile
 
 > (only tested on OSX)
 
-> Requires simplecoremidi package for python
+> Requires simplecoremidi package for python: https://github.com/sixohsix/simplecoremidi
 ```
 pip install simplecoremidi
 ```
