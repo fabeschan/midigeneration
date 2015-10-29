@@ -94,9 +94,10 @@ echo "blah" > triggerfile
 
 > (only tested on OSX)
 
-> Requires simplecoremidi package for python: https://github.com/sixohsix/simplecoremidi
+> Requires simplecoremidi package for python: https://github.com/sixohsix/simplecoremidi, and mido package for python: https://mido.readthedocs.org/en/latest/
 ```
-pip install simplecoremidi
+$ pip install simplecoremidi
+$ pip install mido
 ```
 
 > To receive those MIDI events and be able to play them, use a DAW (I use REAPER which is 'free') and have it receive from the "simple core midi source" input and play to a virtual instrument
