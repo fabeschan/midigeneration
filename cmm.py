@@ -42,7 +42,7 @@ class Markov(object):
 
     def generate(self, seed=[]):
         '''
-        generate a statechain
+        generate a statechain from a (already trained) model
         seed is optional; if provided, will build statechain from seed
 
         note: seed is untested and may very well not work...
@@ -248,7 +248,15 @@ class NoteState(State):
         tup = self.state_data()
         return str(tup) + ' ' + str(self.notes)
 
-def piece_to_markov_model(musicpiece, c, segmentation=False, all_keys=False):
+def piece_to_markov_model(musicpiece, classifier=None, segmentation=False, all_keys=False):
+    '''
+    Train a markov model on a music piece
+
+    if segmentation is True, this will train a markov model of SegmentStates
+    otherwise, the markov model will consist of NoteStates
+
+    '''
+
     mm = Markov()
     print "all_keys:" + str(all_keys)
     if not segmentation:
@@ -262,11 +270,10 @@ def piece_to_markov_model(musicpiece, c, segmentation=False, all_keys=False):
                 shifted_state_chain = [ s.transpose(-i) for s in state_chain ]
                 mm.add(shifted_state_chain)
     else:
-        segmented = experiments.analysis(musicpiece, c)
+        if classifier == None:
+            raise Exception("classifier cannot be None when calling piece_to_markov_model with segmentation=True")
+        segmented = experiments.analysis(musicpiece, classifier)
         chosenscore, chosen, labelled_sections = segmented.chosenscore, segmented.chosen, segmented.labelled_sections
-
-        # state_chain implementation #1: simplistic, but not correct
-        #state_chain = [ SegmentState(labelled_sections[ch], piece_to_markov_model(musicpiece.segment_by_bars(ch[0], ch[0]+ch[1]), c)) for ch in chosen ]
 
         # state_chain implementation #2: more correct than #1, at least
         state_chain = []
@@ -277,7 +284,7 @@ def piece_to_markov_model(musicpiece, c, segmentation=False, all_keys=False):
             ss = labelled_states.get(label, None)
             segment = musicpiece.segment_by_bars(i, i+k)
             if not ss:
-                ss = SegmentState(label, piece_to_markov_model(segment, c, segmentation=False, all_keys=all_keys))
+                ss = SegmentState(label, piece_to_markov_model(segment, classifier, segmentation=False, all_keys=all_keys))
                 labelled_states[label] = ss
             else:
                 # ss.mm holds the mm that generates notes
@@ -304,6 +311,12 @@ def test_variability(mm, meta, bar):
     print lens
 
 def generate_song(mm, meta, bar, segmentation=False):
+
+    '''
+    Generate music, i.e. a list of MIDI tracks, from the given markov model mm
+    you would also need to provide a list of meta events (which you can pull from any MIDI file)
+    '''
+
     song = []
     song.append(meta)
 
@@ -311,6 +324,9 @@ def generate_song(mm, meta, bar, segmentation=False):
         gen = mm.generate()
         print [g.origin + ('-' if g.chord else '') + g.chord for g in gen]
     else:
+        # if segmentation, mm is a markov model of SegmentStates
+        # generate SegmentStates from mm and then generate NoteStates from each
+
         gen_seg = mm.generate()
         print 'Rearranged Sections:'
         print [ g.label for g in gen_seg ]
