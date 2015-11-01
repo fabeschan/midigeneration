@@ -4,32 +4,11 @@ import mido
 from pprint import pprint
 from simplecoremidi import send_midi
 import random
-
-musicpieces = [data.piece('mid/owl.mid'), data.piece('mid/lost.mid')]
-notes = [mp.unified_track.notes for mp in musicpieces]
-
-class Event(object):
-    def __init__(self, msg, pos):
-        self.msg = msg
-        self.pos = pos
-
-    def __repr__(self):
-        return str((self.pos, self.msg))
-
-def convert_to_events(notes, note_offs):
-    events = []
-    for n in notes:
-        msg = mido.Message('note_on', note=n.pitch, channel=n.chn)
-        e0 = Event(msg, n.pos)
-        events.append(e0)
-
-        msg = mido.Message('note_off', note=n.pitch, channel=n.chn)
-        e1 = Event(msg, n.pos + n.dur)
-
-        note_offs[e0] = e1
-    return events
+import playback
 
 def read_trigger_file():
+    # read file, then clear and return its contents
+
     filename = 'trigger_file'
     text = ''
     try:
@@ -52,16 +31,15 @@ def apply_unended(unended, pos, now=False):
 
 def main():
     # init
-    tempo_reciprocal = 3000
-    msg = mido.Message('note_on', note=60, channel=0)
-    send_midi(msg.bytes())
-    raw_input('Setting up channel. Please reset MIDI devices before continuing. Press [Enter]')
-    msg = mido.Message('note_off', note=60, channel=0)
-    send_midi(msg.bytes())
+    musicpieces = [data.piece('mid/owl.mid'), data.piece('mid/lost.mid')]
+    notes = [mp.unified_track.notes for mp in musicpieces]
+
+    tempo_reciprocal = 3000 # 'speed' of playback. need to adjust this carefully
+    playback.init_midi_channel()
 
     note_offs = {}
     unended = set()
-    events_mp = [ convert_to_events(n, note_offs) for n in notes ]
+    events_mp = [ playback.convert_to_events(n, note_offs) for n in notes ]
 
     event_idx = 0
     events = events_mp[event_idx]
