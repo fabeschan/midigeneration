@@ -49,23 +49,40 @@ class Markov(object):
         however, seed is core functionality that will help combine all_keys and segmentation (in the future)
 
         '''
+        buf = self.get_start_buffer(seed)
+        state_chain = []
+        count = 0
+
+        # we might generate an empty statechain, count will stop us from infinite loop
+        while not state_chain or count < 10:
+            #elem = random.choice(self.markov[tuple(buf)]) # take a random next state using buf
+            elem = self.generate_next_state(buf)
+            while elem != Markov.STOP_TOKEN:
+                state_chain.append(elem)
+                buf = self.shift_buffer(buf, elem)
+                elem = self.generate_next_state(buf) # generate another
+            count += 1
+        if not state_chain:
+            print "Warning: state_chain empty; seed={}".format(seed)
+        return state_chain
+
+    def get_start_buffer(self, seed=[]):
         buf = [Markov.START_TOKEN] * self.chain_length
         if seed and len(seed) > self.chain_length:
             buf = seed[-self.chain_length:]
         elif seed:
             buf[-len(seed):] = seed
-        state_chain = []
-        count = 0
-        while not state_chain or count < 10:
-            elem = random.choice(self.markov[tuple(buf)])
-            while elem != Markov.STOP_TOKEN:
-                state_chain.append(elem.copy())
-                buf = buf[1:] + [elem]
-                elem = random.choice(self.markov[tuple(buf)])
-            count += 1
-        if not state_chain:
-            print "Warning: state_chain empty; seed={}".format(seed)
-        return state_chain
+        return buf
+
+    def shift_buffer(self, buf, elem):
+        return buf[1:] + [elem] # shift buf, add elem to the end
+
+    def generate_next_state(self, buf):
+        elem = random.choice(self.markov[tuple(buf)]) # take a random next state using buf
+        if elem != Markov.STOP_TOKEN:
+            return elem.copy() # prevents change of the underlying states of the markov model
+        else:
+            return elem
 
     def copy(self):
         mm = Markov()
