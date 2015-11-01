@@ -6,20 +6,6 @@ from simplecoremidi import send_midi
 import random
 import playback
 
-def read_trigger_file():
-    # read file, then clear and return its contents
-
-    filename = 'trigger_file'
-    text = ''
-    try:
-        with open(filename, 'r+') as f:
-            text = f.read().strip()
-            f.seek(0)
-            f.truncate()
-    except:
-        raise # replace with pass if this is causing you problems
-    return text
-
 def apply_unended(unended, pos, now=False):
     things_to_delete = []
     for k in unended:
@@ -49,7 +35,7 @@ def main():
     loop = True
     i = [0] * len(events)
     while loop:
-        text = read_trigger_file()
+        text = playback.read_trigger_file('trigger_file')
         if text:
             print 'read triggerfile:', text
             event_idx = (event_idx + 1) % 2

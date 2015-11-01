@@ -31,8 +31,9 @@ def convert_to_events(notes, note_offs):
         note_offs[e0] = e1
     return events
 
-def read_trigger_file():
-    filename = 'trigger_file'
+def read_trigger_file(filename):
+    # read file, then clear and return its contents
+
     text = ''
     try:
         with open(filename, 'r+') as f:
@@ -42,15 +43,6 @@ def read_trigger_file():
     except:
         raise # replace with pass if this is causing you problems
     return text
-
-def apply_unended(unended, pos, now=False):
-    things_to_delete = []
-    for k in unended:
-        if now or k.pos < pos:
-            send_midi(k.msg.bytes())
-            things_to_delete.append(k)
-    for k in things_to_delete:
-        unended.remove(k)
 
 def init_midi_channel():
     '''
