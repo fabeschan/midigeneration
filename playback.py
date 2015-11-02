@@ -9,7 +9,10 @@ musicpieces = [data.piece('mid/owl.mid'), data.piece('mid/lost.mid')]
 notes = [mp.unified_track.notes for mp in musicpieces]
 
 class Event(object):
-    # wrapper around a MIDI event message, adding position for playback purposes
+    '''
+    wrapper around a MIDI event message, adding position for playback purposes
+
+    '''
 
     def __init__(self, msg, pos):
         self.msg = msg
@@ -19,6 +22,14 @@ class Event(object):
         return str((self.pos, self.msg))
 
 def convert_to_events(notes, note_offs):
+    '''
+    convert notes to note_on events and note_off events
+    add note_on and note_off pair to note_offs
+    note_offs: dictionary(key=note_on event, value=note_off event)
+    return a list of note_on events
+
+    '''
+
     events = []
     for n in notes:
         msg = mido.Message('note_on', note=n.pitch, channel=n.chn)
@@ -45,6 +56,10 @@ def read_trigger_file(filename):
     return text
 
 def apply_unended(unended, pos, now=False):
+    '''
+    scan and check for note_off events that are overdue, and send them out
+    '''
+
     things_to_delete = []
     for k in unended:
         if now or k.pos < pos:
@@ -57,6 +72,7 @@ def init_midi_channel():
     '''
     Initializes the midi channel, and prompts for a MIDI device reset for your DAW
     Need to reset so that DAW can pick up the MIDI events from the new channel
+
     '''
 
     msg = mido.Message('note_on', note=60, channel=0)
