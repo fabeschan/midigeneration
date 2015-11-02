@@ -55,7 +55,6 @@ class Markov(object):
 
         # we might generate an empty statechain, count will stop us from infinite loop
         while not state_chain or count < 10:
-            #elem = random.choice(self.markov[tuple(buf)]) # take a random next state using buf
             elem = self.generate_next_state(buf)
             while elem != Markov.STOP_TOKEN:
                 state_chain.append(elem)
@@ -131,6 +130,15 @@ class State(object):
 
 
 class SegmentState(State):
+    '''
+    SegmentState: a Markov state representing a segment of music (from segmentation)
+
+    Instance attributes:
+    - string label: name of the SegmentState, possibly arbitrary, for bookkeeping
+    - Markov mm: a Markov model consisting of NoteStates. This will be used for generating the NoteStates
+        within the segment
+
+    '''
 
     def __init__(self, label, mm):
         self.label = label
@@ -154,9 +162,24 @@ class SegmentState(State):
 
 
 class NoteState(State):
+    '''
+    NoteState: a Markov state representing a group of notes (all starting from the same position)
+
+    Instance attributes:
+    - notes: a list of Notes, all with the same position, sorted by duration then pitch
+    - bar: number of ticks in a bar (this is used for converting positions to fixed/decimal values
+    - bar_pos: a fixed/decimal value denoting the position of these notes relative to a bar
+
+    (docs: todo)
+    - state_position:
+    - state_duration:
+    - chord:
+    - origin:
+
+    '''
 
     def __init__(self, notes, bar, chord='', origin=''):
-        # State now holds multiple notes, all with the same pos
+        # State holds multiple notes, all with the same pos
         self.notes = [ n.copy() for n in sorted(notes, key=lambda x: (x.dur, x.pitch)) ]
         self.bar = bar
         self.bar_pos = fixed(self.notes[0].pos % bar) / bar
@@ -169,7 +192,7 @@ class NoteState(State):
             n.dur = fixed(n.dur) / bar
 
     def state_data(self):
-        # make hashable version of state information intended to be hashed
+        ''' make hashable version of state information intended to be hashed '''
         notes_info = [ (n.pitch, n.dur) for n in self.notes ]
         relevant = [self.bar_pos, self.state_duration, self.chord, tuple(notes_info)]
         return tuple(relevant)
@@ -193,7 +216,7 @@ class NoteState(State):
 
     def to_notes(self, bar, last_pos):
         '''
-        convert this NoteState to a list of notes,
+        Convert this NoteState to a list of notes,
         pos of each note will be assigned to last_pos
         bar is the number of ticks to form a bar
         returns the list of notes and the position of the next state (which can be used for the next call)
@@ -210,7 +233,11 @@ class NoteState(State):
 
     @staticmethod
     def state_chain_to_notes(state_chain, bar):
-        # arg bar: number of ticks to define a bar for midi files
+        '''
+        Convert a state chain (a list of NoteStates) to notes
+        arg bar: number of ticks to define a bar for midi files
+
+        '''
 
         last_pos = 0
         notes = []
@@ -225,7 +252,11 @@ class NoteState(State):
 
     @staticmethod
     def notes_to_state_chain(notes, bar):
-        # arg bar: number of ticks to define a bar for midi files
+        '''
+        Convert a list of Notes to a state chain (list of NoteStates)
+        arg bar: number of ticks to define a bar for midi files
+
+        '''
 
         # group notes into bins by their starting positions
         bin_by_pos = {}
@@ -251,7 +282,11 @@ class NoteState(State):
 
     @staticmethod
     def piece_to_state_chain(piece, use_chords=True):
-        # arg use_chord: if True, markov state holds chord label as state information
+        '''
+        Convert a data.piece into a state chain (list of NoteStates)
+        arg use_chord: if True, NoteState holds chord label as state information
+
+        '''
 
         # group notes into bins by their starting positions
         bin_by_pos = {}
@@ -286,8 +321,9 @@ def piece_to_markov_model(musicpiece, classifier=None, segmentation=False, all_k
     '''
     Train a markov model on a music piece
 
-    if segmentation is True, this will train a markov model of SegmentStates
-    otherwise, the markov model will consist of NoteStates
+    Note: (important!)
+    If segmentation is True, train a markov model of SegmentStates, each holding a Markov consisting of NoteStates
+    Otherwise, the Markov model will consist of NoteStates
 
     '''
 
@@ -347,7 +383,7 @@ def test_variability(mm, meta, bar):
 def generate_song(mm, meta, bar, segmentation=False):
 
     '''
-    Generate music, i.e. a list of MIDI tracks, from the given markov model mm
+    Generate music, i.e. a list of MIDI tracks, from the given Markov mm
     you would also need to provide a list of meta events (which you can pull from any MIDI file)
     '''
 
