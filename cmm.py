@@ -191,6 +191,23 @@ class NoteState(State):
             n.pitch += offset
         return s
 
+    def to_notes(self, bar, last_pos):
+        '''
+        convert this NoteState to a list of notes,
+        pos of each note will be assigned to last_pos
+        bar is the number of ticks to form a bar
+        returns the list of notes and the position of the next state (which can be used for the next call)
+        '''
+
+        notes = []
+        for n in self.notes:
+            nc = n.copy()
+            nc.pos = last_pos
+            nc.dur = int(n.dur * bar)
+            notes.append(nc)
+        last_pos += int(self.state_duration * bar)
+        return notes, last_pos
+
     @staticmethod
     def state_chain_to_notes(state_chain, bar):
         # arg bar: number of ticks to define a bar for midi files
