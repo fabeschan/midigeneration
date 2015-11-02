@@ -4,14 +4,6 @@ import mido
 import playback
 
 def main():
-    # init
-    musicpieces = [data.piece('mid/owl.mid'), data.piece('mid/lost.mid')] # init a list of two data.piece()
-    notes = [mp.unified_track.notes for mp in musicpieces] # for each music piece, convert to notes
-
-    tempo_reciprocal = 3000 # 'speed' of playback. need to adjust this carefully
-    playback.init_midi_channel() # set up channel, and prompt MIDI device reset before continuing
-
-
     # initialize a PlaybackUtility for each midi file, put them into a list -> playback_utils
     playback_utils = []
     for f in ['mid/owl.mid', 'mid/lost.mid']:
@@ -19,6 +11,9 @@ def main():
         pbu = playback.PlaybackUtility()
         pbu.add_notes(musicpiece.unified_track.notes)
         playback_utils.append(pbu)
+
+    tempo_reciprocal = 3000 # 'speed' of playback. need to adjust this carefully
+    playback.init_midi_channel() # set up channel, and prompt MIDI device reset before continuing
 
     # loop
     loop = True
