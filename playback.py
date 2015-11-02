@@ -1,12 +1,7 @@
 import data
-import timeit, time
+import time
 import mido
-from pprint import pprint
 import simplecoremidi
-import random
-
-musicpieces = [data.piece('mid/owl.mid'), data.piece('mid/lost.mid')]
-notes = [mp.unified_track.notes for mp in musicpieces]
 
 class Event(object):
     '''

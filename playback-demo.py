@@ -1,9 +1,6 @@
 import data
-import timeit, time
+import time
 import mido
-from pprint import pprint
-from simplecoremidi import send_midi
-import random
 import playback
 
 def main():
@@ -22,7 +19,6 @@ def main():
         pbu = playback.PlaybackUtility()
         pbu.add_notes(musicpiece.unified_track.notes)
         playback_utils.append(pbu)
-
 
     # loop
     loop = True
