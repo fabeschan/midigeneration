@@ -81,6 +81,9 @@ similar_sections.py
 
 > used by analyze.py
 
+playback.py
+> module that houses a few helper functions for realtime playback
+
 playback-demo.py
 > PROOF OF CONCEPT - real time dynamic playback
 
@@ -101,3 +104,6 @@ $ pip install mido
 ```
 
 > To receive those MIDI events and be able to play them, use a DAW (I use REAPER which is 'free') and have it receive from the "simple core midi source" input and play to a virtual instrument
+
+stream-cmm.py
+> Stream and play notes from a Markov Model constructed from a midi file, one state at a time.
