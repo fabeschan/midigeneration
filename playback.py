@@ -32,6 +32,38 @@ class Event(object):
         # note: has nothing to do with pos
         simplecoremidi.send_midi(self.msg.bytes())
 
+class PlaybackUtility(object):
+    '''
+    Helps you play MIDI events and keep track of note_on and note_offs
+
+    '''
+    def __init__(self):
+        self.events = [] # MIDI note_on events
+        self.note_offs = {} # dictionary of note_on -> note_off Events for lookup
+        self.unended = set() # whenever a note_on Event is sent out, add its note_off equivalent to this set to keep track of what notes have not ended
+        self.event_index = 0 # index of Events played so far
+
+    def add_notes(self, notes):
+        self.events += convert_to_events(notes, self.note_offs)
+
+    def run(self, playback_pos):
+        if self.event_index < len(self.events):
+            e = self.events[self.event_index]
+            if e.pos < playback_pos:
+                # send out a note_on Event and put its note_off equivalent into unended to keep track of it
+                e.send_midi()
+                self.unended.add(self.note_offs[e])
+                self.event_index += 1
+
+        apply_unended(self.unended, playback_pos) # send out any note_off events due
+
+    def isTerminated(self):
+        # returns True if all events (both note_on and note_off) are played
+        if not self.unended and self.event_index >= len(self.events):
+            return True
+        return False
+
+
 def convert_to_events(notes, note_offs):
     '''
     convert notes to note_on events and note_off events

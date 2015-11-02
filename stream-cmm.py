@@ -4,13 +4,13 @@ Stream and play notes from a Markov Model constructed from a midi file, one stat
 Workflow:
 1. Read MIDI file and train a Markov Model -> mm
 2. Initialize a note_state_generator with the Markov Model -> nsgen
-3. Loop:
+3. Initialize an instance of PlaybackUtility -> pbu
+4. Loop:
     - generate the next NoteState from the note_state_generator
-    - obtain Notes from the NoteState
-    - play those Notes
+    - obtain Notes from the NoteState, and add them to pbu
+    - play those Notes using pbu
 
 """
-
 
 import cmm
 import data
@@ -26,7 +26,6 @@ def note_state_generator(mm):
         note_state = next(gen, None) # generate the next note_state. Returns none there is no next state.
         if note_state == None:
             print "End!"
-
     '''
 
     buf = mm.get_start_buffer()
@@ -51,7 +50,7 @@ if __name__ == "__main__":
     nsgen = note_state_generator(mm)
 
     # init some parameters
-    tempo_reciprocal = 2000 # 'speed' of playback. need to adjust this carefully, and by trial and error
+    tempo_reciprocal = 1500 # 'speed' of playback. need to adjust this carefully, and by trial and error
     bar = 1024 # used for generating the midi events
     playback.init_midi_channel() # set up channel, and prompt MIDI device reset
 
@@ -59,10 +58,7 @@ if __name__ == "__main__":
     loop = True
     playback_pos = 0
     next_pos = 0 # this is used as a marker for constructing MIDI events from NoteStates
-    events = [] # MIDI note_on events
-    i = 0 # index of Events played so far
-    note_offs = {} # dictionary of note_on -> note_off Events for lookup
-    unended = set() # whenever a note_on Event is sent out, we add its note_off equivalent to this set to keep track of what notes have not ended
+    pbu = playback.PlaybackUtility() # init the PlaybackUtility -> pbu
 
     start_time = time.clock()
     while loop:
@@ -73,16 +69,9 @@ if __name__ == "__main__":
             note_state = next(nsgen, None) # generate the next note_state
             if note_state:
                 notes, next_pos = note_state.to_notes(bar, next_pos)
-                events += playback.convert_to_events(notes, note_offs)
+                pbu.add_notes(notes)
 
-        if i < len(events):
-            e = events[i]
-            if e.pos < playback_pos:
-                # send out a note_on Event and put its note_off equivalent into unended to keep track of it
-                e.send_midi()
-                unended.add(note_offs[e])
-                i += 1
-
-        playback.apply_unended(unended, playback_pos) # send out any note_off events due
-        if not unended and i >= len(events):
+        pbu.run(playback_pos)
+        if pbu.isTerminated():
             loop = False
+
