@@ -1,3 +1,4 @@
+os: osx
 virtualenv:
     system_site_packages: true
 language: python
