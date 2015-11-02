@@ -44,6 +44,15 @@ def read_trigger_file(filename):
         raise # replace with pass if this is causing you problems
     return text
 
+def apply_unended(unended, pos, now=False):
+    things_to_delete = []
+    for k in unended:
+        if now or k.pos < pos:
+            send_midi(k.msg.bytes())
+            things_to_delete.append(k)
+    for k in things_to_delete:
+        unended.remove(k)
+
 def init_midi_channel():
     '''
     Initializes the midi channel, and prompts for a MIDI device reset for your DAW
@@ -52,7 +61,7 @@ def init_midi_channel():
 
     msg = mido.Message('note_on', note=60, channel=0)
     send_midi(msg.bytes())
-    raw_input('Setting up channel. Please reset MIDI devices before continuing. Press [Enter]')
+    raw_input('MIDI channel is now set up. Please reset MIDI devices before continuing. Press [Enter]')
     msg = mido.Message('note_off', note=60, channel=0)
     send_midi(msg.bytes())
 

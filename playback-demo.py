@@ -6,15 +6,6 @@ from simplecoremidi import send_midi
 import random
 import playback
 
-def apply_unended(unended, pos, now=False):
-    things_to_delete = []
-    for k in unended:
-        if now or k.pos < pos:
-            send_midi(k.msg.bytes())
-            things_to_delete.append(k)
-    for k in things_to_delete:
-        unended.remove(k)
-
 def main():
     # init
     musicpieces = [data.piece('mid/owl.mid'), data.piece('mid/lost.mid')]
@@ -33,6 +24,7 @@ def main():
 
     # loop
     loop = True
+    pos = 0
     i = [0] * len(events)
     while loop:
         text = playback.read_trigger_file('trigger_file')
@@ -40,7 +32,7 @@ def main():
             print 'read triggerfile:', text
             event_idx = (event_idx + 1) % 2
             events = events_mp[event_idx]
-            apply_unended(unended, pos, now=True)
+            playback.apply_unended(unended, pos, now=True)
 
         cur_time = time.clock()
         pos = int((cur_time - start_time) * 1000000) / tempo_reciprocal
@@ -50,7 +42,7 @@ def main():
                 send_midi(e.msg.bytes())
                 unended.add(note_offs[e])
                 i[event_idx] += 1
-            apply_unended(unended, pos)
+            playback.apply_unended(unended, pos)
         else:
             loop = False
 
