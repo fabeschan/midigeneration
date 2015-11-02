@@ -1,3 +1,17 @@
+"""
+Stream and play notes from a Markov Model constructed from a midi file.
+
+Workflow:
+1. Read MIDI file and train a Markov Model -> mm
+2. Initialize a note_state_generator with the Markov Model -> nsgen
+3. Loop:
+    - generate the next NoteState from the note_state_generator
+    - obtain Notes from the NoteState
+    - play those Notes
+
+"""
+
+
 import cmm
 import data, patterns
 import playback
@@ -6,6 +20,17 @@ from IPython import embed
 from simplecoremidi import send_midi
 
 def note_state_generator(mm):
+    '''
+    Generator function to generate NoteStates from the given Markov Model.
+
+    Usage:
+        gen = note_state_generator(mm) # initialization
+        note_state = next(gen, None) # generate the next note_state. Returns none there is no next state.
+        if note_state == None:
+            print "End!"
+
+    '''
+
     buf = mm.get_start_buffer()
     elem = mm.generate_next_state(buf)
     yield elem
@@ -37,9 +62,9 @@ if __name__ == "__main__":
     playback_pos = 0
     next_pos = 0 # this is used as a marker for constructing MIDI events from NoteStates
     events = [] # MIDI note_on events
-    i = 0 # index of events played so far
-    note_offs = {} # dictionary of note_on -> note_off events for lookup
-    unended = set() # whenever a note_on event is sent out, we add its note_off equivalent to this set to keep track of what notes are not ended
+    i = 0 # index of Events played so far
+    note_offs = {} # dictionary of note_on -> note_off Events for lookup
+    unended = set() # whenever a note_on Event is sent out, we add its note_off equivalent to this set to keep track of what notes have not ended
 
     start_time = time.clock()
     while loop:
@@ -55,7 +80,7 @@ if __name__ == "__main__":
         if i < len(events):
             e = events[i]
             if e.pos < playback_pos:
-                # send out a note_on event and put its note_off equivalent into unended to keep track of it
+                # send out a note_on Event and put its note_off equivalent into unended to keep track of it
                 send_midi(e.msg.bytes())
                 unended.add(note_offs[e])
                 i += 1
