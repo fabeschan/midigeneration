@@ -1,0 +1,7 @@
+IPython
+numpy
+matplotlib
+sklearn
+skimage
+mido
+simpleforemidi
