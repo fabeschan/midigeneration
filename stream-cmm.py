@@ -1,5 +1,5 @@
 """
-Stream and play notes from a Markov Model constructed from a midi file.
+Stream and play notes from a Markov Model constructed from a midi file, one state at a time.
 
 Workflow:
 1. Read MIDI file and train a Markov Model -> mm
