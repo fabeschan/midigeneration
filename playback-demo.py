@@ -42,7 +42,7 @@ def main():
             e = events[i[event_idx]]
             if e.pos < pos:
                 # send out a note_on Event and put its note_off equivalent into unended to keep track of it
-                send_midi(e.msg.bytes())
+                e.send_midi()
                 unended.add(note_offs[e])
                 i[event_idx] += 1
             playback.apply_unended(unended, pos) # send out any note_off Events due

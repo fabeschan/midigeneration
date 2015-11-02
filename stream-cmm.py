@@ -17,7 +17,6 @@ import data, patterns
 import playback
 import timeit, time
 from IPython import embed
-from simplecoremidi import send_midi
 
 def note_state_generator(mm):
     '''
@@ -81,7 +80,7 @@ if __name__ == "__main__":
             e = events[i]
             if e.pos < playback_pos:
                 # send out a note_on Event and put its note_off equivalent into unended to keep track of it
-                send_midi(e.msg.bytes())
+                e.send_midi()
                 unended.add(note_offs[e])
                 i += 1
 

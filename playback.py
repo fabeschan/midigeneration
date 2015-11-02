@@ -2,7 +2,7 @@ import data
 import timeit, time
 import mido
 from pprint import pprint
-from simplecoremidi import send_midi
+import simplecoremidi
 import random
 
 musicpieces = [data.piece('mid/owl.mid'), data.piece('mid/lost.mid')]
@@ -12,6 +12,12 @@ class Event(object):
     '''
     wrapper around a MIDI event message, adding position for playback purposes
 
+    msg: a mido MIDI message
+    pos: int
+
+    note: if not on OSX, please replace simplecoremidi.send_midi() with a function compatible
+    with your OS.
+
     '''
 
     def __init__(self, msg, pos):
@@ -20,6 +26,11 @@ class Event(object):
 
     def __repr__(self):
         return str((self.pos, self.msg))
+
+    def send_midi(self):
+        # this is a simple wrapper function to send a MIDI event out immediately
+        # note: has nothing to do with pos
+        simplecoremidi.send_midi(self.msg.bytes())
 
 def convert_to_events(notes, note_offs):
     '''
@@ -57,13 +68,13 @@ def read_trigger_file(filename):
 
 def apply_unended(unended, pos, now=False):
     '''
-    scan and check for note_off events that are overdue, and send them out
+    scan and check for note_off events in unended that are overdue, and send them out
     '''
 
     things_to_delete = []
     for k in unended:
         if now or k.pos < pos:
-            send_midi(k.msg.bytes())
+            k.send_midi()
             things_to_delete.append(k)
     for k in things_to_delete:
         unended.remove(k)
@@ -76,8 +87,10 @@ def init_midi_channel():
     '''
 
     msg = mido.Message('note_on', note=60, channel=0)
-    send_midi(msg.bytes())
+    on_event = Event(msg, 0)
+    on_event.send_midi()
     raw_input('MIDI channel is now set up. Please reset MIDI devices before continuing. Press [Enter]')
     msg = mido.Message('note_off', note=60, channel=0)
-    send_midi(msg.bytes())
+    off_event = Event(msg, 0)
+    off_event.send_midi()
 
