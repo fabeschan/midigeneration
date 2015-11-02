@@ -8,11 +8,11 @@ import playback
 
 def main():
     # init
-    musicpieces = [data.piece('mid/owl.mid'), data.piece('mid/lost.mid')]
-    notes = [mp.unified_track.notes for mp in musicpieces]
+    musicpieces = [data.piece('mid/owl.mid'), data.piece('mid/lost.mid')] # init a list of two data.piece()
+    notes = [mp.unified_track.notes for mp in musicpieces] # for each music piece, convert to notes
 
     tempo_reciprocal = 3000 # 'speed' of playback. need to adjust this carefully
-    playback.init_midi_channel() # set up channel, and prompt MIDI device reset
+    playback.init_midi_channel() # set up channel, and prompt MIDI device reset before continuing
 
     note_offs = {} # dictionary of note_on -> note_off Events for lookup
     unended = set() # whenever a note_on Event is sent out, we add its note_off equivalent to this set to keep track of what notes are not ended

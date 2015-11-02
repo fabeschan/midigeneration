@@ -13,10 +13,9 @@ Workflow:
 
 
 import cmm
-import data, patterns
+import data
 import playback
-import timeit, time
-from IPython import embed
+import time
 
 def note_state_generator(mm):
     '''
