@@ -1,7 +1,5 @@
 IPython
 numpy
 scipy
-matplotlib
 sklearn
-scikit-image
 mido
