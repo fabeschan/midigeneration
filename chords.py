@@ -210,7 +210,7 @@ def chord_truths():
     l = []
 
     d = {}
-    d['piece'] = 'mid/Enya_FWIA.MID'
+    d['piece'] = 'mid/Enya_FWIA.mid'
     d['chords'] = [
         'D', 'D', 'Bm', 'D', 'C',
         'D', 'G', 'A', 'D', 'Bm',
@@ -223,7 +223,7 @@ def chord_truths():
     l.append(d)
 
     d = {}
-    d['piece'] = 'mid/Enya_Lothlorien.MID'
+    d['piece'] = 'mid/Enya_Lothlorien.mid'
     d['chords'] = [
         'Am', 'Em', 'Am', 'Em',
         'C', 'G', 'C', 'Am',
