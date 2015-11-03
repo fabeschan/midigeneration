@@ -10,4 +10,9 @@ before_install:
 install:
   - pip install -r requirements.txt
 # command to run tests
-script: python cmm.py
+script:
+  - python similar_sections.py
+  - python analyze.py 10
+  - python chords.py
+  - python cmm.py
+  - python experiments.py mid/easywinners.mid

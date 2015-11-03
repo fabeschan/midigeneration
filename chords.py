@@ -284,5 +284,5 @@ if __name__ == '__main__':
         allbars = cc.predict(musicpiece)
         for i, predicted in enumerate(allbars):
             print 'Bar {}:'.format(i), predicted
-        embed()
+        #embed()
 
