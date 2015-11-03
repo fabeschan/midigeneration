@@ -1,0 +1,18 @@
+virtualenv:
+    system_site_packages: true
+language: python
+python:
+  - "2.7"
+# command to install dependencies
+before_install:
+  - sudo apt-get -qq update
+  - sudo apt-get install -qq python-numpy python-scipy
+install:
+  - pip install -r requirements.txt
+# command to run tests
+script:
+  - python similar_sections.py
+  - python analyze.py 10
+  - python chords.py
+  - python cmm.py
+  - python experiments.py mid/easywinners.mid
