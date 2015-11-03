@@ -5,4 +5,3 @@ matplotlib
 sklearn
 scikit-image
 mido
-simplecoremidi
