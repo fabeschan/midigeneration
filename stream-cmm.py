@@ -3,10 +3,10 @@ Stream and play notes from a Markov Model constructed from a midi file, one stat
 
 Workflow:
 1. Read MIDI file and train a Markov Model -> mm
-2. Initialize a note_state_generator with the Markov Model -> nsgen
+2. Initialize a NoteStateGenerator with the Markov Model -> nsgen
 3. Initialize an instance of PlaybackUtility -> pbu
 4. Loop:
-    - generate the next NoteState from the note_state_generator
+    - generate the next NoteState from the NoteStateGenerator
     - obtain Notes from the NoteState, and add them to pbu
     - play those Notes using pbu
 
@@ -17,12 +17,14 @@ import data
 import playback
 import time
 
-def note_state_generator(mm):
+def NoteStateGenerator(mm):
     '''
     Generator function to generate NoteStates from the given Markov Model.
 
+    NOTE: Assumes a Markov model of NoteStates; does not yet handle a Markov model consisting of SegmentStates
+
     Usage:
-        gen = note_state_generator(mm) # initialization
+        gen = NoteStateGenerator(mm) # initialization
         note_state = next(gen, None) # generate the next note_state. Returns none there is no next state.
         if note_state == None:
             print "End!"
@@ -47,7 +49,7 @@ if __name__ == "__main__":
     mm = cmm.piece_to_markov_model(musicpiece, segmentation=False, all_keys=False)
 
     # initialize the note state generator
-    nsgen = note_state_generator(mm)
+    nsgen = NoteStateGenerator(mm)
 
     # init some parameters
     tempo_reciprocal = 1500 # 'speed' of playback. need to adjust this carefully, and by trial and error
