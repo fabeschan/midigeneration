@@ -114,10 +114,8 @@ def init_midi_channel():
     '''
 
     msg = mido.Message('note_on', note=60, channel=0)
-    on_event = Event(msg, 0)
-    on_event.send_midi()
+    Event(msg, 0).send_midi()
     raw_input('MIDI channel is now set up. Please reset MIDI devices before continuing. Press [Enter]')
     msg = mido.Message('note_off', note=60, channel=0)
-    off_event = Event(msg, 0)
-    off_event.send_midi()
+    Event(msg, 0).send_midi()
 
