@@ -1,7 +1,7 @@
 """
 Stream and play notes from Markov Models constructed from midi files, one state at a time.
 
-Accepts external signals to change its underlying Markov Model
+Accepts external signals to schedule a change in its underlying Markov Model
 
 Workflow:
 1. Read a list of MIDI files and train a pool of Markov Models -> markov_models
