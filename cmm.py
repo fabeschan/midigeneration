@@ -3,6 +3,7 @@ import random, sys
 import data, midi, experiments, patterns, chords
 from decimal import Decimal as fixed
 from IPython import embed
+import copy
 
 class Markov(object):
 
@@ -87,7 +88,7 @@ class Markov(object):
         mm = Markov()
         # shallow copies (TODO: deep copy?)
         mm.chain_length = self.chain_length
-        mm.markov = self.markov.copy()
+        mm.markov = {k: v[:] for k, v in self.markov.iteritems()}
         mm.states = self.states.copy()
         mm.state_chains = [ chain[:] for chain in self.state_chains ]
         return mm
@@ -101,7 +102,6 @@ class Markov(object):
         for chain in model.state_chains:
             mm.add(chain)
         return mm
-
 
 class State(object):
 
@@ -410,8 +410,8 @@ def generate_song(mm, meta, bar, segmentation=False):
 
 if __name__ == '__main__':
     c = patterns.fetch_classifier()
-    segmentation = True
-    all_keys = False
+    segmentation = False
+    all_keys = True
 
     if len(sys.argv) == 4: # <midi-file> <start-bar> <end-bar>
         musicpiece = data.piece(sys.argv[1])
