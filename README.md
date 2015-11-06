@@ -89,10 +89,10 @@ playback-demo.py
 
 > Loops over MIDI events and sends them to a MIDI channel
 
-> It polls a local file called triggerfile to toggle between two .mid files:
+> It polls a local file called trigger_file to toggle between two .mid files:
 > To trigger a toggle, just put something in the file as follows:
 ```
-echo "blah" > triggerfile
+echo "blah" > trigger_file
 ```
 
 > (only tested on OSX)
@@ -112,3 +112,7 @@ stream-dynamic.py
 > Stream and play notes from Markov Models constructed from midi files, one state at a time.
 
 > Accepts external signals to schedule a change in its underlying Markov Model
+> To schedule a random Markov model, run:
+```
+echo "random" > trigger_file
+```
