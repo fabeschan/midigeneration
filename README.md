@@ -107,3 +107,8 @@ $ pip install mido
 
 stream-cmm.py
 > Stream and play notes from a Markov Model constructed from a midi file, one state at a time.
+
+stream-dynamic.py
+> Stream and play notes from Markov Models constructed from midi files, one state at a time.
+
+> Accepts external signals to schedule a change in its underlying Markov Model
