@@ -408,7 +408,7 @@ def generate_song(mm, meta, bar, segmentation=False):
 
     return song, gen, a
 
-if __name__ == '__main__':
+def generate_output():
     c = patterns.fetch_classifier()
     segmentation = False
     all_keys = True
@@ -431,6 +431,21 @@ if __name__ == '__main__':
         song, gen, a = generate_song(mm, musicpiece.meta, musicpiece.bar, segmentation)
 
     midi.write('output.mid', song)
+    return
+
+def generate_score():
+    '''() -> NoneType
+    Generate the score (.xml) for the auto-generated midi file.
+    Please open using a MusicXMl reader such as Finale NotePad.
+    '''
+    import music21   # required to display score
+    midi_file_output = music21.converter.parse("output.mid")
+    midi_file_output.show()
+    return
+
+if __name__ == '__main__':
+    generate_output()
+    generate_score()
 
     # uncomment this to enter shell before program exits... allows inspection of variables
     #embed()

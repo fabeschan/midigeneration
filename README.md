@@ -5,6 +5,7 @@ Required python 2.7 modules:
     - matplotlib
     - sklearn
     - skimage
+    - music21
 ```
 
 
@@ -14,7 +15,9 @@ HOW TO RUN:
 Run cmm.py
 > python cmm.py
 
-It produces a file named output.mid once it finishes running
+It produces a file named output.mid once it finishes running.
+The output's score is also generated in musicXML, which can be viewed
+using notation software such as Finale NotePad.
 
 Configuring: (scroll towards the end of cmm.py)
 Edit pieces in cmm.py to select source pieces:
