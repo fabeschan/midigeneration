@@ -74,6 +74,6 @@ if __name__ == "__main__":
                 pbu.add_notes(notes)
 
         pbu.run(playback_pos)
-        if pbu.isTerminated():
+        if note_state is None and pbu.isTerminated():
             loop = False
 

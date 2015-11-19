@@ -411,7 +411,7 @@ def generate_song(mm, meta, bar, segmentation=False):
 def generate_output():
     c = patterns.fetch_classifier()
     segmentation = False
-    all_keys = True
+    all_keys = False
 
     if len(sys.argv) == 4: # <midi-file> <start-bar> <end-bar>
         musicpiece = data.piece(sys.argv[1])
@@ -421,6 +421,7 @@ def generate_output():
 
     else:
         pieces = ["mid/hilarity.mid", "mid/froglegs.mid", "mid/easywinners.mid"]
+        #pieces = ["mid/britney3.mid"]
         mm = Markov()
 
         # generate a model _mm for each piece then add them together
@@ -445,7 +446,4 @@ def generate_score():
 
 if __name__ == '__main__':
     generate_output()
-    generate_score()
-
-    # uncomment this to enter shell before program exits... allows inspection of variables
-    #embed()
+    #generate_score()
