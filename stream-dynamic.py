@@ -114,7 +114,8 @@ if __name__ == "__main__":
     # load MIDI files (from program arguments if provided)
     filenames = sys.argv[1:]
     if not filenames:
-        filenames = ["mid/easywinners.mid", "mid/froglegs.mid", "mid/hilarity.mid", "mid/sjeugen.mid"]
+        #filenames = ["mid/easywinners.mid", "mid/froglegs.mid", "mid/hilarity.mid", "mid/sjeugen.mid"]
+        filenames = ["mid/mario2.mid", "mid/mario3.mid"]
     musicpieces = {f: data.piece(f) for f in filenames}
 
     # train a markov model on each piece to make a pool of Markov models
@@ -167,6 +168,6 @@ if __name__ == "__main__":
                 pbu.add_notes(notes)
 
         pbu.run(playback_pos)
-        if pbu.isTerminated():
+        if note_state is None and pbu.isTerminated():
             loop = False
 
