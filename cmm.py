@@ -7,14 +7,16 @@ today is still brooding in its infancy. Existing works lack musical integrity. T
 are three main types of structure in music that carry significance: harmonic structure,
 rhythmic structure, and recurrent structure. Although popular, models based on recurrent
 neural networks, at the time of writing, are restricted to monophonic melodies and
-also do not capture reasonable rhythmic structure and are therefore weak. L-grammar
+moreover do not capture reasonable rhythmic structure and are therefore weak. L-grammar
 systems and evolutionary systems perform worse still. This model builds upon the
 idea of a stochastic model based on Markov transitions that can handle all three
 types of structures and produce novel yet coherent compositions, with polyphonic
-melodies and high-level recurrent patterns.
+melodies and high-level recurrent patterns in a data-driven manner.
 
-This code sample was developed for my undergrad senior thesis and earned me a
-publication at the AIIDE'15 (AAAI) conference.
+This code sample was developed as part of my undergraduate senior thesis and earned
+me a publication at the AIIDE'15 (AAAI) conference.
+
+CMM stands for concurrent Markov model and is the basis of this learning system.
 
 """
 
@@ -41,7 +43,7 @@ class Markov(object):
 
     def __init__(self, chain_length=1):
         self.chain_length = chain_length
-        self.markov = {}
+        self.markov = {} # stores all the state transitions
         self.states = set()
         self.state_chains = [[]]
 
