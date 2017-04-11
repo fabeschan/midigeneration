@@ -9,14 +9,13 @@ rhythmic structure, and recurrent structure. Although popular, models based on r
 neural networks, at the time of writing, are restricted to monophonic melodies and
 moreover do not capture reasonable rhythmic structure and are therefore weak. L-grammar
 systems and evolutionary systems perform worse still. This model builds upon the
-idea of a stochastic model based on Markov transitions that can handle all three
-types of structures and produce novel yet coherent compositions, with polyphonic
-melodies and high-level recurrent patterns in a data-driven manner.
+idea of a stochastic model based on Markov transitions that can handle all three types
+of structures and produce novel yet coherent compositions in a data-driven manner.
 
-This code sample was developed as part of my undergraduate senior thesis and earned
-me a publication at the AIIDE'15 (AAAI) conference.
+This code sample was developed as part of my undergraduate senior thesis and earned me
+a publication at the AIIDE'15 (AAAI) conference.
 
-CMM stands for concurrent Markov model and is the basis of this learning system.
+CMM stands for concurrent Markov model and is the basis for this learning system.
 
 """
 
@@ -138,6 +137,7 @@ class Markov(object):
             mm.add(chain)
         return mm
 
+
 class State(object):
     '''
     Basic interface of a state to be used in a Markov model
@@ -199,6 +199,7 @@ class SegmentState(State):
             note_states.extend(gen)
         return note_states
 
+
 def bin_notes_by_position(notes):
     ''' Group notes into bins by their starting positions '''
     bin_by_pos = {}
@@ -238,6 +239,10 @@ class NoteState(State):
 
         for n in self.notes:
             n.dur = fixed(n.dur) / bar
+
+    def __repr__(self):
+        tup = self.state_data()
+        return str(tup) + ' ' + str(self.notes)
 
     def state_data(self):
         ''' Make a hashable version of state information intended to be hashed '''
@@ -351,9 +356,6 @@ class NoteState(State):
 
         return state_chain
 
-    def __repr__(self):
-        tup = self.state_data()
-        return str(tup) + ' ' + str(self.notes)
 
 def piece_to_markov_model(musicpiece, classifier=None, segmentation=False, all_keys=False):
     '''
@@ -369,7 +371,8 @@ def piece_to_markov_model(musicpiece, classifier=None, segmentation=False, all_k
     if not segmentation:
         state_chain = NoteState.piece_to_state_chain(musicpiece, all_keys)
         mm.add(state_chain)
-        if all_keys: # shift piece up some number of tones, and down some number of tones
+        if all_keys:
+            # shift the piece up some number of tones, and down some number of tones, creating a model for each, and unioning them all
             for i in range(1, TRANSPOSE_SHIFT_MAX):
                 shifted_state_chain = [ s.transpose(i) for s in state_chain ]
                 mm.add(shifted_state_chain)
@@ -379,17 +382,19 @@ def piece_to_markov_model(musicpiece, classifier=None, segmentation=False, all_k
     else:
         if classifier == None:
             raise Exception("classifier cannot be None when calling piece_to_markov_model with segmentation=True")
+
+        # segment piece by analysis and retrieve high-level recurrent structure
         segmented = experiments.analysis(musicpiece, classifier)
         chosenscore, chosen, labelled_sections = segmented.chosenscore, segmented.chosen, segmented.labelled_sections
 
-        # state_chain implementation #2: more correct than #1, at least
+        # state_chain generation
         state_chain = []
         labelled_states = {}
         for ch in chosen:
-            i, k = ch[0], ch[1]
+            start_bar, num_bars = ch[0], ch[1]
             label = labelled_sections[ch]
-            ss = labelled_states.get(label, None)
-            segment = musicpiece.segment_by_bars(i, i+k)
+            ss = labelled_states.get(label, None) # retrieve the corresponding SegmentState
+            segment = musicpiece.segment_by_bars(start_bar, start_bar + num_bars) # extract the relevant bars
             if not ss:
                 ss = SegmentState(label, piece_to_markov_model(segment, classifier, segmentation=False, all_keys=all_keys))
                 labelled_states[label] = ss
@@ -399,9 +404,6 @@ def piece_to_markov_model(musicpiece, classifier=None, segmentation=False, all_k
                 ss.mm.add(_state_chain)
             state_chain.append(ss)
 
-        print 'Original Sections: ({})'.format(musicpiece.filename)
-        print [ g.label for g in state_chain ]
-        print chosenscore
         mm.add(state_chain)
     return mm
 
