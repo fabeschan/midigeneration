@@ -1,3 +1,12 @@
+MIDIGENERATION
+-----------
+
+Overview:
+
+Automatic music generation is part of the broader area of algorithmic composition, which is part of the field of artificial intelligence, yet research on the topic today is still brooding in its infancy. Existing works are lacking in musical integrity. There are three significant structure to proper music: harmonic structure, rhythmic structure, and recurrent structure. Ironically, models based on recurrent neural networks, at the time of writing, are restricted to monophonic melodies and also do not capture reasonable rhythmic structure and are therefore weak. L-grammar systems and evolutionary systems perform more poorly in comparison. This model build upon the idea of a stochastic model based on Markov transitions that can handle all three types of structures.
+
+This project contains the full code I used for my 2015 undergrad senior thesis that earned me a publication at the AIIDE conference.
+
 ```
 Required python 2.7 modules:
     - IPython
