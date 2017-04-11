@@ -1,20 +1,39 @@
-# Markov Model thingy
+"""
+Model Generation for Automatic Music Composition
+
+Automatic music generation is part of the broader area of algorithmic composition,
+which is part of the field of artificial intelligence, yet research on the topic
+today is still brooding in its infancy. Existing works are lacking in musical
+integrity. There are three significant structure to proper music: harmonic structure,
+rhythmic structure, and recurrent structure. Ironically, models based on recurrent
+neural networks, at the time of writing, are restricted to monophonic melodies and
+also do not capture reasonable rhythmic structure and are therefore weak. L-grammar
+systems and evolutionary systems perform more poorly in comparison. This model builds
+upon the idea of a stochastic model based on Markov transitions that can handle all
+three types of structures and produce novel yet coherent compositions.
+
+This code sample was developed for my undergrad senior thesis and earned me a
+publication at the AIIDE'15 (AAAI) conference.
+
+"""
+
 import random, sys
 import data, midi, experiments, patterns, chords
-from decimal import Decimal as fixed
-from IPython import embed
-import copy
+from decimal import Decimal as fixed # using fixed numbers as floats are troublesome to compare
 
 class Markov(object):
 
     '''
     Generic object for a Markov model
 
-    trains state and state transitions by reading statechains
-    statechain: a list of states
-    state: a concrete class derived from the abstract class State
+    Trains state and state transitions by reading statechains
+
+    Args:
+        statechain: a list of states
+        state: a concrete class derived from the abstract class State
 
     '''
+
     START_TOKEN = 'start_token'
     STOP_TOKEN = 'stop_token'
 
@@ -26,9 +45,10 @@ class Markov(object):
 
     def add(self, chain):
         '''
-        add a statechain to the markov model (i.e. perform training)
+        Add a statechain to the markov model (i.e. perform training)
 
         '''
+
         self.state_chains.append(chain)
         buf = [Markov.START_TOKEN] * self.chain_length
         for state in chain:
@@ -43,11 +63,8 @@ class Markov(object):
 
     def generate(self, seed=[]):
         '''
-        generate a statechain from a (already trained) model
-        seed is optional; if provided, will build statechain from seed
-
-        note: seed is untested and may very well not work...
-        however, seed is core functionality that will help combine all_keys and segmentation (in the future)
+        Generate a statechain from a (already trained) model
+        Seed is optional; if provided, will build statechain from seed
 
         '''
         buf = self.get_start_buffer(seed)
@@ -62,6 +79,7 @@ class Markov(object):
                 buf = self.shift_buffer(buf, elem)
                 elem = self.generate_next_state(buf) # generate another
             count += 1
+
         if not state_chain:
             print "Warning: state_chain empty; seed={}".format(seed)
         return state_chain
@@ -75,9 +93,19 @@ class Markov(object):
         return buf
 
     def shift_buffer(self, buf, elem):
+        '''
+        Return a new buf with the first element deleted and with elem appended to the end of buf
+
+        '''
+
         return buf[1:] + [elem] # shift buf, add elem to the end
 
     def generate_next_state(self, buf):
+        '''
+        Generate the next state from this model, based on its current internal state
+
+        '''
+
         elem = random.choice(self.markov[tuple(buf)]) # take a random next state using buf
         if elem != Markov.STOP_TOKEN:
             return elem.copy() # prevents change of the underlying states of the markov model
@@ -85,8 +113,12 @@ class Markov(object):
             return elem
 
     def copy(self):
+        '''
+        Return a copy of this model
+
+        '''
+
         mm = Markov()
-        # shallow copies (TODO: deep copy?)
         mm.chain_length = self.chain_length
         mm.markov = {k: v[:] for k, v in self.markov.iteritems()}
         mm.states = self.states.copy()
@@ -95,9 +127,11 @@ class Markov(object):
 
     def add_model(self, model):
         '''
-        union of the states and state transitions of self and model
-        returns a new markov model
+        Union of the states and state transitions of self and model
+        Returns a new markov model
+
         '''
+
         mm = self.copy()
         for chain in model.state_chains:
             mm.add(chain)
@@ -154,6 +188,12 @@ class SegmentState(State):
 
     @staticmethod
     def state_chain_to_note_states(state_chain):
+        '''
+        Produce a list of NoteStates from a given state chain. Static method for constructing a complete
+        segment of music from the state chain.
+
+        '''
+
         note_states = []
         for s in state_chain:
             gen = s.mm.generate()
@@ -163,18 +203,18 @@ class SegmentState(State):
 
 class NoteState(State):
     '''
-    NoteState: a Markov state representing a group of notes (all starting from the same position)
+    NoteState: a Markov state representing a group of notes
+    (all starting from the same position as per definition)
 
     Instance attributes:
     - notes: a list of Notes, all with the same position, sorted by duration then pitch
     - bar: number of ticks in a bar (this is used for converting positions to fixed/decimal values
     - bar_pos: a fixed/decimal value denoting the position of these notes relative to a bar
 
-    (docs: todo)
-    - state_position:
-    - state_duration:
-    - chord:
-    - origin:
+    - state_position: position that marks the start of the state
+    - state_duration: number of ticks that describes the duration of the state
+    - chord: the current chord identifier for this state
+    - origin: the original chord identifier for this state
 
     '''
 
@@ -192,7 +232,11 @@ class NoteState(State):
             n.dur = fixed(n.dur) / bar
 
     def state_data(self):
-        ''' make hashable version of state information intended to be hashed '''
+        '''
+        Make a hashable version of state information intended to be hashed
+
+        '''
+
         notes_info = [ (n.pitch, n.dur) for n in self.notes ]
         relevant = [self.bar_pos, self.state_duration, self.chord, tuple(notes_info)]
         return tuple(relevant)
@@ -206,6 +250,11 @@ class NoteState(State):
         return s
 
     def transpose(self, offset):
+        '''
+        Transpose all notes in this NoteState by offset
+
+        '''
+
         s = self.copy()
         ctemp = self.chord.split('m')[0]
         s.chord = chords.translate(chords.untranslate(ctemp)+offset) + ('m' if 'm' in self.chord else '')
@@ -219,7 +268,9 @@ class NoteState(State):
         Convert this NoteState to a list of notes,
         pos of each note will be assigned to last_pos
         bar is the number of ticks to form a bar
-        returns the list of notes and the position of the next state (which can be used for the next call)
+
+        Returns the list of notes and the position of the next state (which can be used for the next call)
+
         '''
 
         notes = []
@@ -371,7 +422,8 @@ def piece_to_markov_model(musicpiece, classifier=None, segmentation=False, all_k
 def test_variability(mm, meta, bar):
     '''
     Generate song 10 times from a trained markov model  and print out their lengths
-    if they are all the same lengths, chances are the pieces are all the same
+    if they are all the same lengths, chances are the pieces are all the same.
+    In which case, there's likely a bug and I should fix it.
 
     '''
     lens = []
@@ -381,10 +433,10 @@ def test_variability(mm, meta, bar):
     print lens
 
 def generate_song(mm, meta, bar, segmentation=False):
-
     '''
     Generate music, i.e. a list of MIDI tracks, from the given Markov mm
     you would also need to provide a list of meta events (which you can pull from any MIDI file)
+
     '''
 
     song = []
@@ -421,7 +473,6 @@ def generate_output():
 
     else:
         pieces = ["mid/hilarity.mid", "mid/froglegs.mid", "mid/easywinners.mid"]
-        #pieces = ["mid/britney3.mid"]
         mm = Markov()
 
         # generate a model _mm for each piece then add them together
@@ -435,10 +486,12 @@ def generate_output():
     return
 
 def generate_score():
-    '''() -> NoneType
+    '''
     Generate the score (.xml) for the auto-generated midi file.
     Please open using a MusicXMl reader such as Finale NotePad.
+
     '''
+
     import music21   # required to display score
     midi_file_output = music21.converter.parse("output.mid")
     midi_file_output.show()
