@@ -22,15 +22,17 @@ import random, sys
 import data, midi, experiments, patterns, chords
 from decimal import Decimal as fixed # using fixed numbers as floats are troublesome to compare
 
+TRANSPOSE_SHIFT_MAX = 6 # maximum number of tones allowed to be transposed during generation
+
 class Markov(object):
     '''
     Generic object for a Markov model
 
-    Trains state and state transitions by reading statechains
+    Train state and state transitions by reading and processing statechains
 
-    Args:
-        statechain: a list of states
-        state: a concrete class derived from the abstract class State
+    Notes:
+        statechain -- a list of states
+        state -- a concrete class derived from the abstract class State
 
     '''
 
@@ -44,11 +46,7 @@ class Markov(object):
         self.state_chains = [[]]
 
     def add(self, chain):
-        '''
-        Add a statechain to the markov model (i.e. perform training)
-
-        '''
-
+        ''' Add a statechain to the markov model (i.e. perform training) '''
         self.state_chains.append(chain)
         buf = [Markov.START_TOKEN] * self.chain_length
         for state in chain:
@@ -95,17 +93,15 @@ class Markov(object):
 
     def shift_buffer(self, buf, elem):
         '''
-        Return a new buf with the first element deleted and with elem appended to the end of buf
+        Return a new list with the first element deleted and with elem appended
+        to the end of buf
 
         '''
 
         return buf[1:] + [elem] # shift buf, add elem to the end
 
     def generate_next_state(self, buf):
-        '''
-        Generate the next state from this model, based on its current internal state
-
-        '''
+        ''' Generate the next state from this model, based on its current internal state '''
 
         elem = random.choice(self.markov[tuple(buf)]) # take a random next state using buf
         if elem != Markov.STOP_TOKEN:
@@ -114,10 +110,7 @@ class Markov(object):
             return elem
 
     def copy(self):
-        '''
-        Return a copy of this model
-
-        '''
+        ''' Return a copy of this model '''
 
         mm = Markov()
         mm.chain_length = self.chain_length
@@ -128,8 +121,8 @@ class Markov(object):
 
     def add_model(self, model):
         '''
+        Return a new markov model:
         Union of the states and state transitions of self and model
-        Returns a new markov model
 
         '''
 
@@ -168,8 +161,8 @@ class SegmentState(State):
     SegmentState: a Markov state representing a segment of music (from segmentation)
 
     Instance attributes:
-    - string label: name of the SegmentState, possibly arbitrary, for bookkeeping
-    - Markov mm: a Markov model consisting of NoteStates. This will be used for generating the NoteStates
+    label -- name of the SegmentState, possibly arbitrary, for bookkeeping
+    mm -- a Markov model consisting of NoteStates. This will be used for generating the NoteStates
         within the segment
 
     '''
@@ -183,8 +176,7 @@ class SegmentState(State):
         return tuple(relevant)
 
     def copy(self):
-        s = SegmentState(self.label, self.mm)
-        return s
+        return SegmentState(self.label, self.mm)
 
     @staticmethod
     def state_chain_to_note_states(state_chain):
@@ -200,6 +192,16 @@ class SegmentState(State):
             note_states.extend(gen)
         return note_states
 
+def bin_notes_by_position(notes):
+    ''' group notes into bins by their starting positions '''
+    bin_by_pos = {}
+    for n in notes:
+        v = bin_by_pos.get(n.pos, [])
+        v.append(n)
+        bin_by_pos[n.pos] = v
+
+    positions = sorted(bin_by_pos.keys())
+    return bin_by_pos, positions
 
 class NoteState(State):
     '''
@@ -207,14 +209,14 @@ class NoteState(State):
     (all starting from the same position as per definition)
 
     Instance attributes:
-    - notes: a list of Notes, all with the same position, sorted by duration then pitch
-    - bar: number of ticks in a bar (this is used for converting positions to fixed/decimal values
-    - bar_pos: a fixed/decimal value denoting the position of these notes relative to a bar
+        notes -- a list of Notes, all with the same position, sorted by duration then pitch
+        bar -- number of ticks in a bar (this is used for converting positions to fixed/decimal values
+        bar_pos -- a fixed/decimal value denoting the position of these notes relative to a bar
 
-    - state_position: position that marks the start of the state
-    - state_duration: number of ticks that describes the duration of the state
-    - chord: the current chord identifier for this state
-    - origin: the original chord identifier for this state
+        state_position -- position that marks the start of the state
+        state_duration -- number of ticks that describes the duration of the state
+        chord -- the current chord identifier for this state
+        origin -- the original chord identifier for this state
 
     '''
 
@@ -232,11 +234,7 @@ class NoteState(State):
             n.dur = fixed(n.dur) / bar
 
     def state_data(self):
-        '''
-        Make a hashable version of state information intended to be hashed
-
-        '''
-
+        ''' Make a hashable version of state information intended to be hashed '''
         notes_info = [ (n.pitch, n.dur) for n in self.notes ]
         relevant = [self.bar_pos, self.state_duration, self.chord, tuple(notes_info)]
         return tuple(relevant)
@@ -250,11 +248,7 @@ class NoteState(State):
         return s
 
     def transpose(self, offset):
-        '''
-        Transpose all notes in this NoteState by offset
-
-        '''
-
+        ''' Transpose all notes in this NoteState by offset '''
         s = self.copy()
         ctemp = self.chord.split('m')[0]
         s.chord = chords.translate(chords.untranslate(ctemp)+offset) + ('m' if 'm' in self.chord else '')
@@ -269,7 +263,7 @@ class NoteState(State):
         pos of each note will be assigned to last_pos
         bar is the number of ticks to form a bar
 
-        Returns the list of notes and the position of the next state (which can be used for the next call)
+        Return the list of notes and the position of the next state (which can be used for the next call)
 
         '''
 
@@ -286,7 +280,7 @@ class NoteState(State):
     def state_chain_to_notes(state_chain, bar):
         '''
         Convert a state chain (a list of NoteStates) to notes
-        arg bar: number of ticks to define a bar for midi files
+        bar: number of ticks to define a bar for midi files
 
         '''
 
@@ -305,18 +299,11 @@ class NoteState(State):
     def notes_to_state_chain(notes, bar):
         '''
         Convert a list of Notes to a state chain (list of NoteStates)
-        arg bar: number of ticks to define a bar for midi files
+        bar: number of ticks to define a bar for midi files
 
         '''
 
-        # group notes into bins by their starting positions
-        bin_by_pos = {}
-        for n in notes:
-            v = bin_by_pos.get(n.pos, [])
-            v.append(n)
-            bin_by_pos[n.pos] = v
-
-        positions = sorted(bin_by_pos.keys())
+        bin_by_pos, positions = bin_notes_by_position(notes)
 
         # produce a state_chain by converting the notes at every position x into a NoteState
         state_chain = map(lambda x: NoteState(bin_by_pos[x], bar), positions)
@@ -335,18 +322,12 @@ class NoteState(State):
     def piece_to_state_chain(piece, use_chords=True):
         '''
         Convert a data.piece into a state chain (list of NoteStates)
-        arg use_chord: if True, NoteState holds chord label as state information
+        use_chords: if True, NoteState holds chord label as state information
 
         '''
 
-        # group notes into bins by their starting positions
-        bin_by_pos = {}
-        for n in piece.unified_track.notes:
-            v = bin_by_pos.get(n.pos, [])
-            v.append(n)
-            bin_by_pos[n.pos] = v
+        bin_by_pos, positions = bin_notes_by_position(notes)
 
-        positions = sorted(bin_by_pos.keys())
         if use_chords:
             cc = chords.fetch_classifier()
             allbars = cc.predict(piece) # assign chord label for each bar
@@ -372,7 +353,6 @@ def piece_to_markov_model(musicpiece, classifier=None, segmentation=False, all_k
     '''
     Train a markov model on a music piece
 
-    Note: (important!)
     If segmentation is True, train a markov model of SegmentStates, each holding a Markov consisting of NoteStates
     Otherwise, the Markov model will consist of NoteStates
 
@@ -384,10 +364,10 @@ def piece_to_markov_model(musicpiece, classifier=None, segmentation=False, all_k
         state_chain = NoteState.piece_to_state_chain(musicpiece, all_keys)
         mm.add(state_chain)
         if all_keys: # shift piece up some number of tones, and down some number of tones
-            for i in range(1, 6):
+            for i in range(1, TRANSPOSE_SHIFT_MAX):
                 shifted_state_chain = [ s.transpose(i) for s in state_chain ]
                 mm.add(shifted_state_chain)
-            for i in range(1, 7):
+            for i in range(1, TRANSPOSE_SHIFT_MAX):
                 shifted_state_chain = [ s.transpose(-i) for s in state_chain ]
                 mm.add(shifted_state_chain)
     else:
@@ -421,7 +401,7 @@ def piece_to_markov_model(musicpiece, classifier=None, segmentation=False, all_k
 
 def test_variability(mm, meta, bar):
     '''
-    Generate song 10 times from a trained markov model  and print out their lengths
+    Generate 10 pieces from a trained markov model  and print out their lengths
     if they are all the same lengths, chances are the pieces are all the same.
     In which case, there's likely a bug and I should fix it.
 
@@ -466,7 +446,7 @@ def generate_output():
     segmentation = False
     all_keys = False
 
-    if len(sys.argv) == 4: # <midi-file> <start-bar> <end-bar>
+    if len(sys.argv) == 4: # positional arguments: <midi-file> <start-bar> <end-bar>
         musicpiece = data.piece(sys.argv[1])
         musicpiece = musicpiece.segment_by_bars(int(sys.argv[2]), int(sys.argv[3]))
         mm = piece_to_markov_model(musicpiece, classifier, segmentation)
@@ -484,18 +464,5 @@ def generate_output():
     song, gen, notes = generate_song(mm, musicpiece.meta, musicpiece.bar, segmentation)
     midi.write('output.mid', song)
 
-def generate_score():
-    '''
-    Generate the score (.xml) for the auto-generated midi file.
-    Please open using a MusicXMl reader such as Finale NotePad.
-
-    '''
-
-    import music21   # required to display score
-    midi_file_output = music21.converter.parse("output.mid")
-    midi_file_output.show()
-    return
-
 if __name__ == '__main__':
     generate_output()
-    #generate_score()
