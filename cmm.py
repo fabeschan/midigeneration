@@ -10,7 +10,8 @@ neural networks, at the time of writing, are restricted to monophonic melodies a
 also do not capture reasonable rhythmic structure and are therefore weak. L-grammar
 systems and evolutionary systems perform worse still. This model builds upon the
 idea of a stochastic model based on Markov transitions that can handle all three
-types of structures and produce novel yet coherent compositions.
+types of structures and produce novel yet coherent compositions, with polyphonic
+melodies and high-level recurrent patterns.
 
 This code sample was developed for my undergrad senior thesis and earned me a
 publication at the AIIDE'15 (AAAI) conference.
@@ -22,7 +23,6 @@ import data, midi, experiments, patterns, chords
 from decimal import Decimal as fixed # using fixed numbers as floats are troublesome to compare
 
 class Markov(object):
-
     '''
     Generic object for a Markov model
 
@@ -67,6 +67,7 @@ class Markov(object):
         Seed is optional; if provided, will build statechain from seed
 
         '''
+
         buf = self.get_start_buffer(seed)
         state_chain = []
         count = 0
@@ -138,7 +139,6 @@ class Markov(object):
         return mm
 
 class State(object):
-
     '''
     Basic interface of a state to be used in a Markov model
     Please override state_data() and copy()
@@ -426,10 +426,11 @@ def test_variability(mm, meta, bar):
     In which case, there's likely a bug and I should fix it.
 
     '''
+
     lens = []
     for i in range(10):
-        song, gen, a = generate_song(mm, meta, bar, True)
-        lens.append(len(a))
+        song, gen, notes = generate_song(mm, meta, bar, True)
+        lens.append(len(notes))
     print lens
 
 def generate_song(mm, meta, bar, segmentation=False):
@@ -449,41 +450,39 @@ def generate_song(mm, meta, bar, segmentation=False):
         # if segmentation, mm is a markov model of SegmentStates
         # generate SegmentStates from mm and then generate NoteStates from each
 
-        gen_seg = mm.generate()
+        gen_seg = mm.generate() # generate a segment
         print 'Rearranged Sections:'
         print [ g.label for g in gen_seg ]
         gen = SegmentState.state_chain_to_note_states(gen_seg)
 
-    a = NoteState.state_chain_to_notes(gen, bar)
-    if not a: return generate_song(mm, meta, bar, segmentation)
-    song.append([ n.note_event() for n in a ])
+    notes = NoteState.state_chain_to_notes(gen, bar)
+    if not notes: return generate_song(mm, meta, bar, segmentation)
+    song.append([ n.note_event() for n in notes ])
 
-    return song, gen, a
+    return song, gen, notes
 
 def generate_output():
-    c = patterns.fetch_classifier()
+    classifier = patterns.fetch_classifier()
     segmentation = False
     all_keys = False
 
     if len(sys.argv) == 4: # <midi-file> <start-bar> <end-bar>
         musicpiece = data.piece(sys.argv[1])
         musicpiece = musicpiece.segment_by_bars(int(sys.argv[2]), int(sys.argv[3]))
-        mm = piece_to_markov_model(musicpiece, c, segmentation)
-        song, gen, a = generate_song(mm, musicpiece.meta, musicpiece.bar, segmentation)
+        mm = piece_to_markov_model(musicpiece, classifier, segmentation)
 
     else:
         pieces = ["mid/hilarity.mid", "mid/froglegs.mid", "mid/easywinners.mid"]
-        mm = Markov()
+        mm = Markov() # initialize an empty model
 
         # generate a model _mm for each piece then add them together
         for p in pieces:
             musicpiece = data.piece(p)
-            _mm = piece_to_markov_model(musicpiece, c, segmentation, all_keys)
+            _mm = piece_to_markov_model(musicpiece, classifier, segmentation, all_keys)
             mm = mm.add_model(_mm)
-        song, gen, a = generate_song(mm, musicpiece.meta, musicpiece.bar, segmentation)
 
+    song, gen, notes = generate_song(mm, musicpiece.meta, musicpiece.bar, segmentation)
     midi.write('output.mid', song)
-    return
 
 def generate_score():
     '''
