@@ -32,7 +32,7 @@ class Markov(object):
 
     Notes:
         statechain -- a list of states
-        state -- a concrete class derived from the abstract class State
+        state -- any concrete class derived from the abstract class State
 
     '''
 
@@ -84,6 +84,11 @@ class Markov(object):
         return state_chain
 
     def get_start_buffer(self, seed=[]):
+        '''
+        Return the start buffer for the current model, use seed if provided
+
+        '''
+
         buf = [Markov.START_TOKEN] * self.chain_length
         if seed and len(seed) > self.chain_length:
             buf = seed[-self.chain_length:]
@@ -161,8 +166,8 @@ class SegmentState(State):
     SegmentState: a Markov state representing a segment of music (from segmentation)
 
     Instance attributes:
-    label -- name of the SegmentState, possibly arbitrary, for bookkeeping
-    mm -- a Markov model consisting of NoteStates. This will be used for generating the NoteStates
+        label -- name of the SegmentState, possibly arbitrary, for bookkeeping
+        mm -- a Markov model consisting of NoteStates. This will be used for generating the NoteStates
         within the segment
 
     '''
@@ -193,7 +198,7 @@ class SegmentState(State):
         return note_states
 
 def bin_notes_by_position(notes):
-    ''' group notes into bins by their starting positions '''
+    ''' Group notes into bins by their starting positions '''
     bin_by_pos = {}
     for n in notes:
         v = bin_by_pos.get(n.pos, [])
@@ -221,7 +226,6 @@ class NoteState(State):
     '''
 
     def __init__(self, notes, bar, chord='', origin=''):
-        # State holds multiple notes, all with the same pos
         self.notes = [ n.copy() for n in sorted(notes, key=lambda x: (x.dur, x.pitch)) ]
         self.bar = bar
         self.bar_pos = fixed(self.notes[0].pos % bar) / bar
@@ -251,7 +255,7 @@ class NoteState(State):
         ''' Transpose all notes in this NoteState by offset '''
         s = self.copy()
         ctemp = self.chord.split('m')[0]
-        s.chord = chords.translate(chords.untranslate(ctemp)+offset) + ('m' if 'm' in self.chord else '')
+        s.chord = chords.translate(chords.untranslate(ctemp)+offset) + ('m' if 'm' in self.chord else '') # create chord label
         s.origin = 'T({})'.format(offset) + s.origin
         for n in s.notes:
             n.pitch += offset
@@ -330,8 +334,8 @@ class NoteState(State):
 
         if use_chords:
             cc = chords.fetch_classifier()
-            allbars = cc.predict(piece) # assign chord label for each bar
-            state_chain = map(lambda x: NoteState(bin_by_pos[x], piece.bar, chord=allbars[x/piece.bar], origin=piece.filename), positions)
+            chord_labels = cc.predict(piece) # assign chord label for each bar
+            state_chain = map(lambda x: NoteState(bin_by_pos[x], piece.bar, chord=chord_labels[x/piece.bar], origin=piece.filename), positions)
         else:
             state_chain = map(lambda x: NoteState(bin_by_pos[x], piece.bar, chord='', origin=piece.filename), positions)
 
